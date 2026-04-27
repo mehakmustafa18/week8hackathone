@@ -113,6 +113,13 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
       return;
     }
 
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/upload`;
+    console.log('Ingesting to:', apiUrl);
+
+    if (!apiUrl.startsWith('https') && !apiUrl.includes('localhost')) {
+      alert('⚠️ Security Warning: You are attempting to upload over an insecure connection (http). Many browsers block this. Please use https://');
+    }
+
     const formData = new FormData();
     formData.append('file', selectedFile);
 
