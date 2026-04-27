@@ -10,11 +10,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   // Enable CORS
-  // Enable CORS for deployment
+  // Full Permissive CORS for Hackathon
   app.enableCors({
-    origin: true, // Allow all origins for the hackathon deployment to prevent blockages
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // Middleware for file uploads

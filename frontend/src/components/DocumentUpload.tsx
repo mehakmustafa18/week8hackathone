@@ -128,20 +128,18 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
         onUploadSuccess();
       }, 2000);
     } catch (error: any) {
-      console.error('Upload error:', error);
+      console.error('Full Upload Error Object:', error);
       let errorMessage = 'The orchestrating agents encountered an issue. ';
       
       if (error?.status === 'FETCH_ERROR') {
-        errorMessage = 'Cannot connect to the backend server. Please verify your BACKEND_URL in deployment settings.';
+        errorMessage = 'Cannot connect to the backend. PROBABLY A CORS OR PROTOCOL ISSUE. \n\n1. Ensure your NEXT_PUBLIC_API_URL starts with https://\n2. Verify the backend domain is correct.\n3. Check browser console (F12) for "CRO-Origin" errors.';
+      } else if (error?.status === 504) {
+        errorMessage = 'Deployment Timeout: Analysis took more than 10s. Vercel Hobby plan has a strict 10s limit.';
       } else if (error?.data?.message) {
         errorMessage += error.data.message;
-      } else if (error?.message) {
-        errorMessage += error.message;
-      } else {
-        errorMessage += 'Please check if the file is a valid PDF and under 20MB.';
       }
       
-      alert(`❌ Ingestion Failed\n\n${errorMessage}`);
+      alert(`❌ Ingestion Failed\n\n${errorMessage}\n\nRAW ERROR: ${JSON.stringify(error)}`);
       setUploadProgress(0);
     }
   };
