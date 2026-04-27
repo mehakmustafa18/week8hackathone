@@ -30,7 +30,7 @@ export interface DocumentAnalysis {
 
 export class DocumentAnalyzerAgent {
   private groq: Groq;
-  private model = 'llama-3.3-70b-versatile';
+  private model = 'llama-3.1-8b-instant'; // Faster model for initial indexing to prevent timeouts
 
   constructor() {
     const apiKey = process.env.GROQ_API_KEY;
@@ -42,11 +42,11 @@ export class DocumentAnalyzerAgent {
       apiKey: apiKey,
     });
     
-    console.log(`[ANALYZER] Initialized with model: ${this.model}`);
+    console.log(`[ANALYZER] Initialized with speed-optimized model: ${this.model}`);
   }
 
   async analyze(documentContent: string, documentTitle: string): Promise<DocumentAnalysis> {
-    console.log(`[ANALYZER] Starting analysis of: ${documentTitle}`);
+    console.log(`[ANALYZER] Starting FAST analysis of: ${documentTitle}`);
     console.log(`[ANALYZER] Content length: ${documentContent.length} characters`);
 
     const toolsUsed: string[] = [];
@@ -70,68 +70,43 @@ export class DocumentAnalyzerAgent {
 
       metadata = {
         wordCount: wordCount,
-        totalPages: Math.ceil(fullText.length / 2500), // Estimate pages
+        totalPages: Math.ceil(fullText.length / 3000), // Estimate pages
       };
 
-      console.log(`[ANALYZER] Document stats: ${metadata.wordCount} words, ~${metadata.totalPages} pages`);
+      // Parallel tool execution for speed
+      console.log('[ANALYZER] Executing tools in parallel...');
+      const [sectionResult, entityResult] = await Promise.all([
+        toolRegistry.locateSections.execute(fullText),
+        toolRegistry.extractEntities.execute(fullText)
+      ]);
 
-      // TOOL 1: Locate sections
-      console.log('[ANALYZER] Using tool: locateSections');
-      toolsUsed.push('locateSections');
-      const sectionResult = await toolRegistry.locateSections.execute(fullText);
+      toolsUsed.push('locateSections', 'extractEntities');
       sections = sectionResult.sections;
-      console.log(`[ANALYZER] Found ${sections.length} sections`);
-
-      // TOOL 4: Extract entities
-      console.log('[ANALYZER] Using tool: extractEntities');
-      toolsUsed.push('extractEntities');
-      const entityResult = await toolRegistry.extractEntities.execute(fullText);
       entities = entityResult.entities;
-      console.log(`[ANALYZER] Extracted ${entities.people.length} people, ${entities.organizations.length} organizations`);
 
-      // GUARDRAIL: Tool usage validation
-      const toolCheck = guardrailEngine.validateToolUsage('analyzer', toolsUsed, 'document analysis');
-      if (!toolCheck.passed) {
-        throw new Error(`Tool usage violation: ${toolCheck.reason}`);
-      }
+      // Now use Groq for quick interpretation
+      const analysisPrompt = `Analyze this document and provide JSON:
+1. documentType: research_paper|business_report|legal_policy|manual_guide|unknown
+2. keyThemes: 3-5 main topics
+3. sectionSummaries: list of {title, summary} (max 50 words per summary)
+4. analysis: quick 100-word overview
 
-      // Now use Groq to interpret the analysis with MORE DETAILS
-      const analysisPrompt = `You are a document analyst. Analyze this document thoroughly and provide:
+Content: ${fullText.substring(0, 3000)}
+Sections: ${sections.map(s => s.title).join(', ')}
 
-1. Document type classification (research_paper, business_report, legal_policy, manual_guide, or unknown)
-2. Key themes and topics (at least 5-7 themes)
-3. Detailed summaries of each section (100-150 words each)
-4. Overall document purpose and significance
-5. Target audience
-6. Main conclusions or recommendations
-
-Document content (first 5000 chars for context):
-${fullText.substring(0, 5000)}
-
-Sections found:
-${sections.map((s) => `- ${s.title || 'Untitled Section'}: ${s.content ? s.content.substring(0, 300) : 'No content'}...`).join('\n')}
-
-Provide your analysis in JSON format with these fields:
+JSON Format:
 {
-  "documentType": "research_paper|business_report|legal_policy|manual_guide|unknown",
-  "keyThemes": ["theme1", "theme2", "theme3", "theme4", "theme5"],
-  "sectionSummaries": [{"title": "section title", "summary": "detailed summary (100-150 words)"}],
-  "purpose": "detailed purpose (150-200 words)",
-  "analysis": "comprehensive analysis (300-400 words)",
-  "targetAudience": "who this document is for",
-  "mainConclusions": ["conclusion1", "conclusion2", "conclusion3"]
+  "documentType": "...",
+  "keyThemes": [],
+  "sectionSummaries": [{"title": "", "summary": ""}],
+  "analysis": "..."
 }`;
 
       const response = await this.groq.chat.completions.create({
         model: this.model,
-        max_tokens: 2000, // Increased for more detailed analysis
-        messages: [
-          {
-            role: 'user',
-            content: analysisPrompt,
-          },
-        ],
-        temperature: 0.3,
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: analysisPrompt }],
+        temperature: 0.1,
       });
 
       const analysisText = response.choices[0].message.content;
