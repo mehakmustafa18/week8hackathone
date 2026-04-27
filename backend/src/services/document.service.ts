@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { DocumentAnalyzerAgent } from '../agents/analyzer.agent';
 import { toolRegistry } from '../agents/tools';
 import { PDFDocument } from '../schemas/document.schema';
@@ -31,11 +32,16 @@ export class DocumentService {
       console.log(`[DOCUMENT SERVICE] Processing PDF: ${originalName}, Size: ${file.size} bytes`);
       
       const fileName = `pdf_${Date.now()}.pdf`;
-      const uploadPath = path.join('/tmp', fileName);
+      const uploadPath = path.join(os.tmpdir(), fileName);
+
+      if (!file || !file.buffer) {
+        console.error('[DOCUMENT SERVICE] File buffer missing. Check multipart configuration.');
+        throw new Error('File buffer is empty. Please ensure the file was uploaded correctly.');
+      }
 
       // Save file temporarily
       fs.writeFileSync(uploadPath, file.buffer);
-      console.log(`[DOCUMENT SERVICE] File saved to: ${uploadPath}`);
+      console.log(`[DOCUMENT SERVICE] File saved to temporary storage: ${uploadPath}`);
 
       // Extract PDF content
       console.log('[DOCUMENT SERVICE] Extracting PDF content...');

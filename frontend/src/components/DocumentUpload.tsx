@@ -117,8 +117,7 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
     formData.append('file', selectedFile);
 
     try {
-      // Simulate progress
-      setUploadProgress(30);
+      setUploadProgress(20);
       const result = await uploadPDF(formData).unwrap();
       setUploadProgress(100);
       setUploadResult(result.data);
@@ -129,29 +128,20 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
         onUploadSuccess();
       }, 2000);
     } catch (error: any) {
-      console.error('Upload error details:', error);
+      console.error('Upload error:', error);
+      let errorMessage = 'The orchestrating agents encountered an issue. ';
       
-      // Extract meaningful error message
-      let errorMessage = 'Upload failed. ';
-      
-      if (error?.data?.message) {
+      if (error?.status === 'FETCH_ERROR') {
+        errorMessage = 'Cannot connect to the backend server. Please verify your BACKEND_URL in deployment settings.';
+      } else if (error?.data?.message) {
         errorMessage += error.data.message;
-      } else if (error?.error) {
-        errorMessage += error.error;
       } else if (error?.message) {
         errorMessage += error.message;
-      } else if (error?.status) {
-        errorMessage += `Server error: ${error.status}`;
-      } else if (error?.originalStatus) {
-        errorMessage += `HTTP ${error.originalStatus}: ${error.data || 'No response from server'}`;
       } else {
-        errorMessage += 'Unknown error occurred. Please check console for details.';
+        errorMessage += 'Please check if the file is a valid PDF and under 20MB.';
       }
       
-      // Clean up the error message
-      errorMessage = errorMessage.replace('uundefined', 'Unknown error').replace('undefined', 'Unknown error');
-      
-      alert(`❌ Upload Failed\n\n${errorMessage}\n\nPlease check:\n1. File is a valid PDF\n2. File size < 20MB\n3. Internet connection\n4. Server is running`);
+      alert(`❌ Ingestion Failed\n\n${errorMessage}`);
       setUploadProgress(0);
     }
   };
