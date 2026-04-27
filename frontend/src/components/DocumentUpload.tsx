@@ -51,22 +51,22 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
     const files = e.dataTransfer.files;
     if (files && files[0]) {
       const file = files[0];
-      
+
       // Check file type
       if (file.type !== 'application/pdf') {
         alert(`❌ Invalid File Type\n\nDropped file: ${file.name}\nType: ${file.type || 'Unknown'}\n\nPlease drop a PDF file (.pdf extension)`);
         return;
       }
-      
+
       // Check file size (20MB max)
       const maxSizeMB = 20;
       const fileSizeMB = file.size / 1024 / 1024;
-      
+
       if (fileSizeMB > maxSizeMB) {
         alert(`❌ File Too Large\n\nDropped file: ${file.name}\nSize: ${fileSizeMB.toFixed(2)}MB\nMaximum allowed: ${maxSizeMB}MB\n\nPlease drop a smaller PDF file`);
         return;
       }
-      
+
       setSelectedFile(file);
     }
   };
@@ -74,24 +74,24 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
+
       // Check file type
       if (file.type !== 'application/pdf') {
         alert(`❌ Invalid File Type\n\nSelected file: ${file.name}\nType: ${file.type || 'Unknown'}\n\nPlease select a PDF file (.pdf extension)`);
         e.target.value = ''; // Clear the input
         return;
       }
-      
+
       // Check file size (20MB max)
       const maxSizeMB = 20;
       const fileSizeMB = file.size / 1024 / 1024;
-      
+
       if (fileSizeMB > maxSizeMB) {
         alert(`❌ File Too Large\n\nSelected file: ${file.name}\nSize: ${fileSizeMB.toFixed(2)}MB\nMaximum allowed: ${maxSizeMB}MB\n\nPlease select a smaller PDF file`);
         e.target.value = ''; // Clear the input
         return;
       }
-      
+
       setSelectedFile(file);
     }
   };
@@ -107,7 +107,7 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
 
     const maxSizeMB = 20; // 20MB
     const fileSizeMB = selectedFile.size / 1024 / 1024;
-    
+
     if (fileSizeMB > maxSizeMB) {
       alert(`❌ File Too Large\n\nSelected file: ${selectedFile.name}\nSize: ${fileSizeMB.toFixed(2)}MB\nMaximum allowed: ${maxSizeMB}MB\n\nPlease select a smaller PDF file`);
       return;
@@ -137,7 +137,7 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
     } catch (error: any) {
       console.error('Full Upload Error Object:', error);
       let errorMessage = 'The orchestrating agents encountered an issue. ';
-      
+
       if (error?.status === 'FETCH_ERROR') {
         errorMessage = 'Cannot connect to the backend. PROBABLY A CORS OR PROTOCOL ISSUE. \n\n1. Ensure your NEXT_PUBLIC_API_URL starts with https://\n2. Verify the backend domain is correct.\n3. Check browser console (F12) for "CRO-Origin" errors.';
       } else if (error?.status === 504) {
@@ -145,7 +145,7 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
       } else if (error?.data?.message) {
         errorMessage += error.data.message;
       }
-      
+
       alert(`❌ Ingestion Failed\n\n${errorMessage}\n\nRAW ERROR: ${JSON.stringify(error)}`);
       setUploadProgress(0);
     }
@@ -192,7 +192,7 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
               <Typography variant="body1" sx={{ lineHeight: 1.8, color: 'text.primary', fontStyle: 'italic' }}>
                 {uploadResult.analysis.summary || 'Summary not available.'}
               </Typography>
-              
+
               <Box sx={{ mt: 4 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>CORE THEMES</Typography>
                 <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
@@ -211,24 +211,24 @@ export default function DocumentUploadComponent({ onUploadSuccess }: DocumentUpl
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
                     <Typography variant="caption" fontWeight={800} color="text.secondary" display="block">PEOPLE</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{uploadResult.analysis.entities?.people?.slice(0,3).join(', ') || 'N/A'}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{uploadResult.analysis.entities?.people?.slice(0, 3).join(', ') || 'N/A'}</Typography>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" fontWeight={800} color="text.secondary" display="block">ORGS</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{uploadResult.analysis.entities?.organizations?.slice(0,3).join(', ') || 'N/A'}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{uploadResult.analysis.entities?.organizations?.slice(0, 3).join(', ') || 'N/A'}</Typography>
                   </Grid>
                 </Grid>
               </Paper>
 
-              <Button 
-                variant="contained" 
-                fullWidth 
-                size="large" 
+              <Button
+                variant="contained"
+                fullWidth
+                size="large"
                 onClick={onUploadSuccess}
-                sx={{ 
-                  borderRadius: 3, 
-                  py: 2, 
-                  fontWeight: 800, 
+                sx={{
+                  borderRadius: 3,
+                  py: 2,
+                  fontWeight: 800,
                   boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.3)',
                   fontSize: '1rem'
                 }}
